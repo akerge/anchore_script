@@ -98,7 +98,6 @@ anchVulnResults(){
 	mkdir $reportDir
 	touch $reportDir/index.html
 	dest="$reportDir/index.html"
-	echo "$dest ###################### \$dest"
 	echo "<!DOCTYPE html><html><head>" > $dest
 	echo "<style>
   body {
@@ -124,17 +123,33 @@ anchVulnResults(){
     pointer-events: none;
   }
 }
+
 .crit {
   background-color: red;
   color: #000000;
+  }
+.crit a{
+  background-color: red ;
+  color: #000000;
 }
 .hi {
+  background-color: orange;
+  color: #000000;
+  }
+.hi a {
   background-color: orange;
   color: #000000;
 }
 .med {
   background-color: yellow;
   color: #000000;
+  }
+.med a {
+  background-color: yellow;
+  color: #000000;
+}
+a {
+  color: white;
 }
 ::selection {
   background: #502277;
@@ -168,8 +183,10 @@ rw(){
 	awk '/High/ {$0=$0"</span>"} 1' tmp.html > $dest
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
-	rm tmp.html
-	echo Done highlighting
+	echo Making URL-s clickable...
+	sed -r 's|(https?://[a-zA-Z./~0-9?-]+)|<a href="&1">&1</a>|g' $dest > tmp.html
+	mv tmp.html $dest 
+	echo "Done highlighting & URL-ing"
 }
 
 # HERE LIES THE START OF THE SCRIPT
