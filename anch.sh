@@ -44,6 +44,7 @@ repoTag(){
 		echo reoName:repoTagName
 		echo $repoName:$repoTagName added
 	fi
+	# clearing variable, otherwise will add the freshest tag of previous repo.
 	repoTagName=""
 	return
 }
@@ -99,6 +100,7 @@ anchVulnResults(){
 	touch $reportDir/index.html
 	dest="$reportDir/index.html"
 	echo "<!DOCTYPE html><html><head>" > $dest
+	# CSS originally made by Chris Coyier
 	echo "<style>
   body {
   background-color: black;
