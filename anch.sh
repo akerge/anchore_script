@@ -99,6 +99,7 @@ anchVulnResults(){
 	mkdir $reportDir
 	touch $reportDir/index.html
 	dest="$reportDir/index.html"
+	title="Anchore Vulnerability Scan Results"
 	echo "<!DOCTYPE html><html><head>" > $dest
 	# CSS originally made by Chris Coyier
 	echo "<style>
@@ -161,7 +162,7 @@ pre {
   margin: 0;
 }
 	</style>
-<title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
+<title>$title $(date) </title></head><body><pre><code><h1>$title</h1>" >> $dest
 echo "$(date)" >> $dest
 	while read scan
 	do
