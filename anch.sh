@@ -44,7 +44,6 @@ repoTag(){
 		echo reoName:repoTagName
 		echo $repoName:$repoTagName added
 	fi
-	# clearing variable, otherwise will add the freshest tag of previous repo.
 	repoTagName=""
 	return
 }
@@ -99,9 +98,7 @@ anchVulnResults(){
 	mkdir $reportDir
 	touch $reportDir/index.html
 	dest="$reportDir/index.html"
-	title="Anchore Vulnerability Scan Results"
 	echo "<!DOCTYPE html><html><head>" > $dest
-	# CSS originally made by Chris Coyier
 	echo "<style>
   body {
   background-color: black;
@@ -162,7 +159,7 @@ pre {
   margin: 0;
 }
 	</style>
-<title>$title $(date) </title></head><body><pre><code><h1>$title</h1>" >> $dest
+<title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
 echo "$(date)" >> $dest
 	while read scan
 	do
@@ -187,7 +184,7 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-	sed -r 's|(https?://[a-zA-Z./~0-9?-]+)|<a href="&1">&1</a>|g' $dest > tmp.html
+	sed -r 's|(https?://[a-zA-Z./~0-9?-]+)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest 
 	echo "Done highlighting & URL-ing"
 }
