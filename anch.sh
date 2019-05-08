@@ -21,6 +21,14 @@
 writImgs=""
 skipImgs=""
 repoTagName=""
+
+getRepoNames(){
+	echo Getting repos...
+	aws ecr describe-repositories > desc_repos.txt
+	grep -oP '(?<=repositoryName": ")([a-zA-Z0-9-]*)' desc_repos.txt > repos.txt
+	echo Done!
+}
+
 repoTag(){
 	# greps all the tags
 	arr=($(grep -oP --color '(?<=            ")([a-zA-Z0-9.\/\-_]+)' tmp/$1.txt))
@@ -36,13 +44,13 @@ repoTag(){
 		return 1
 	else
 		lastEl=${arr[$arrEnd]}
-		echo $lastEl this is the last element
+		#echo $lastEl this is the last element
 		repoTagName=$lastEl
 #		echo "$lastEl <- last element of array"
 		echo $repoName:$repoTagName >> images_with_tags.txt
 		let writImgs++
-		echo reoName:repoTagName
-		echo $repoName:$repoTagName added
+		#echo reoName:repoTagName
+		#echo $repoName:$repoTagName added
 	fi
 	repoTagName=""
 	return
@@ -189,51 +197,104 @@ rw(){
 	echo "Done highlighting & URL-ing"
 }
 
+getVuln(){
+	getRepoNames
+	sortImgsInRepo
+	outputImgTagname
+	addToAnch
+}
+
+getResults(){
+	anchVulnResults
+	rw
+	x-www-browser $dest
+}
+
+getECR(){
+	aws ecr get-login | grep -oP '(?<=https:\/\/)([a-zA-Z0-9.-]*)' > ecr.txt
+	echo "<Drum roll>"
+	cat ecr.txt
+	echo Saved to ecr.txt
+}
+
+printImagesWithTags(){
+	cat images_with_tags.txt
+}
+
 # HERE LIES THE START OF THE SCRIPT
 
 echo Simple script to get all repos with latest tags
-echo 1 TODO output all images in repo to repos.txt
+echo 1 - Output all images in repo to repos.txt
 echo "2 - Output all tags in all the images to tmp/<image>.txt"
 echo 3 - Output images with tags to images_with_tags.txt 
 echo "4 - Add images to anchore to scan (needs anchore-cli installed and container running, will force)"
-echo "5 - Output Scan results (if any) to HTML and show"
-echo 6 TODO do all of the above
+echo 5 - Do all of the above
+echo "6 - Output Scan results (if any) to HTML and show"
+echo 7 - Show known repo
+echo 8 - Show known images:tags
+echo 9 TODO Get report regarding specific image:tag
 echo Q - Quit
 
 read INPUT
 
 case $INPUT in
-	1)
+	1)	echo ""
+		echo = = = = = = = = = = = = = = = = =
 		# noteworthy https://gist.github.com/rpherrera/d7a4d905775653b88e5f
 		# jq is a prerequisite
-		echo WIP
+		getRepoNames
 		;;
-	2)
+	2)	echo ""
 		echo Sorting images repo by repo, please stand by...
+		echo = = = = = = = = = = = = = = = = =
 		sortImgsInRepo
 		;;
-	3)
+	3)	echo""
 		echo Writing image:tag to a file...
+		echo = = = = = = = = = = = = = = = = =
 		outputImgTagname
 		;;
-	4)
+	4)	echo ""
 		echo Submitting images to anchore...
+		echo = = = = = = = = = = = = = = = = =
 		addToAnch
 		;;
-	5)
+	5)	echo ""
+		echo Here we go!
+		echo = = = = = = = = = = = = = = = = =
+		getVuln
+		echo ""
+		echo Give some time for the images to be analyzed and then run the next option.
+		echo = = = = = = = = = = = = = = = = =
+		;;
+	6)	echo ""
 		echo Querying vuln results from anchore
-		anchVulnResults
-		rw
-		x-www-browser $dest
+		echo = = = = = = = = = = = = = = = = =
+		getResults
 		;;
-	6)
-		echo WIP
+	7)	echo ""
+		echo Known ECR repo is...
+		echo = = = = = = = = = = = = = = = = =
+		getECR
 		;;
-	q)
+	8)	echo ""
+		echo Known images with respective tags:
+		echo = = = = = = = = = = = = = = = = =
+		printImagesWithTags
+		;;
+	9)	echo ""
+		echo TODO!
+		;;
+	q)	echo ""
 		echo Bye!
 		exit
 		;;
-	*)
+	*)	echo ""
 		echo Not an option. Please re-run.
 		;;
 esac
+
+# TODO
+# get vuln info output by (repo)img:tag
+# list known (repo)img:tag
+# add simple stats to img:tag -- count vulnerabilites
