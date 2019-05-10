@@ -5,7 +5,8 @@ bash script to get repositories with tag names from private AWS ECR, feed them t
 ![Example screenshot](https://github.com/akerge/anchore_script/raw/master/img/anch_script.png "Example screenshot")
 
 ## Scenario
-TODO why this script was necessary?
+
+I was tired to see the vulnerability report on the CLI and made this is a handy script to query report(s) from anchore. Currently supports AWS ECR only. TODO is to add support for all other images too.
 
 ## Prerequisites
 

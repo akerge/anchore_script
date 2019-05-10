@@ -17,6 +17,8 @@
 # ideally it would append the element to a repo name
 # $repo:$element > repo_tags.txt
 
+tabs 4	# set tab len to 4 for prettier element alignment
+
 # setting global variable to return from repoTag()
 writImgs=""
 skipImgs=""
@@ -26,7 +28,8 @@ dest=""
 getRepoNames(){
 	echo Getting repos...
 	aws ecr describe-repositories > desc_repos.txt
-	grep -oP '(?<=repositoryName": ")([a-zA-Z0-9-]*)' desc_repos.txt > repos.txt
+	grep -oP '(?<=repositoryName": ")([^\.{1}][a-zA-Z0-9-]*)' desc_repos.txt > repos.txt
+	rm desc_repos.txt
 	echo Done!
 }
 
@@ -60,12 +63,14 @@ repoTag(){
 
 sortImgsInRepo(){
 	mkdir tmp/
+	echo "Starting sort..."
 	while read repo
 	do
-		echo Querying $repo
+		echo "Querying $repo"
 		aws ecr describe-images --repository $repo --query 'sort_by(imageDetails,& imagePushedAt)[*]' > tmp/$repo.txt
 	done < repos.txt
-	echo Done querying.
+	echo ""
+	echo "Done querying."
 }
 
 outputImgTagname(){
@@ -73,12 +78,23 @@ outputImgTagname(){
 	rm images_with_tags.txt
 	while read repoName
 	do
-		echo Writing \'$repoName:$repoTagName\' to file
+		echo "Writing $repoName:$repoTagName" 
 		repoTag $repoName
 	done < repos.txt
-	echo Done writing.
-	echo $writImgs images written.
-	echo $skipImgs images skipped.
+	echo ""
+	echo "Done writing."
+	echo ""
+	echo "$writImgs images written."
+	echo "$skipImgs images skipped."
+}
+
+ecr=""
+isECRknown(){
+	if [ ! -f ecr.txt ]; then
+		getECR	
+	else
+		ecr=$(cat ecr.txt)
+	fi
 }
 
 addToAnch(){
@@ -91,44 +107,13 @@ addToAnch(){
 #	read URL
 	while read latestAndGreatest
 	do
-		echo Feeding $URL/$latestAndGreatest to anchore to scan
-		anchore-cli image add $URL/$latestAndGreatest #--force
+		echo "Feeding $ecr/$latestAndGreatest to anchore to scan"
+		echo "$line $line"
+		anchore-cli image add $ecr/$latestAndGreatest #--force
 	done < images_with_tags.txt
 	echo Done feeding.
 
-} 
-
-ecr=""
-isECRknown(){
-	if [ ! -f ecr.txt ]; then
-printSpecificImgVuln(){
-	while read img
-	do
-		repoArr[]=
-	done < images_with_tags.txt
 }
-
-		echo ""
-		echo "ECR URL needed and o ECR repo name found. Do you want to?"
-		echo ""
-		echo "1	Log in to aws ecr"
-		echo "2	Save to file (already logged in to AWS ECR)"
-		echo "3	Input it manually (numbers.region.amazonaws.com)"
-		read YN
-		case $YN in
-			1)	echo "Getting login..."
-				echo "aws ecr get-login"
-				aws ecr get-login;;
-			# enter case for Y/N options here
-			2)	echo "Saving AWS ECR URL to file (ecr.txt)"
-				getECR;;
-			# N: input it manually
-			3)	echo "Please enter AWS ECR URL:"
-				read ecr;;
-		esac
-	fi
-}
-
 
 anchVulnResults(){
 	echo Specify relative path to a new report directory
@@ -137,14 +122,17 @@ anchVulnResults(){
 	isECRknown
 	mkdir $reportDir
 #	touch $reportDir/$date-anchore-vuln-report.html
-	dest=$reportDir/All-$date-anchore-vuln-report.html
+	pwd=$(pwd)
+	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
 	date=$(date +%F)
 	ecr=$(cat ecr.txt)
-	echo "$date"
-	echo "$ecr <- ecr"
+#	echo "$date"
+#	echo "$ecr <- ecr"
 	# If a single repo vuln report is wanted
 	if [ ! -z $1 ]; then
-		dest=$reportDir/$1-$date-anchore-vuln-report.html
+		short=$(echo "$1" | grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
+#		echo "$short <- short"
+		dest=$pwd/$reportDir/$short-$date-anchore-vuln-report.html
 	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
 	echo "<style>
@@ -213,6 +201,7 @@ echo "$(date)" >> $dest
 	if [ -z $1 ]; then
 		while read scan
 		do
+			echo ""
 			echo Querying $ecr/$scan
 #			echo anchore-cli image vuln $ecr/$scan all INTO $reportDir/$scan
 #			echo "
@@ -223,16 +212,16 @@ echo "$(date)" >> $dest
 		done < images_with_tags.txt
 	else
 	# if $1 exists, then
-		echo "Querying $ecr/$1"
+		echo "Querying $1"
 		echo "<h2>$1</h2>" >> $dest
-		anchore-cli image vuln $ecr/$1 all >> $dest
+		anchore-cli image vuln $1 all >> $dest
 	fi
 	echo "</code></pre></html>" >> $dest
-	echo "Location of dest: $dest"
+	echo "Location of report: $dest"
 }
 
 rw(){
-	echo "$dest should start hiliting"
+#	echo "$dest should start hiliting"
 	echo Highlighting...
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
@@ -274,56 +263,80 @@ printImagesWithTags(){
 	cat images_with_tags.txt
 }
 
-line="= = = = = = = = = = = = = = = = ="
-
-printSpecificImgVuln(){
-	# read repos and respective images to an array
-	# print out index and index value
-	if [ -f images_with_tags.txt ]; then
-		# set tab len to 4 for prettier element alignment
-		tabs 4
+printPreferred(){
+		# read repos and respective images to an array
+		# print out index and index value
+	if [ -f $allOrECR ]; then
 		while read img
 		do
-			repoArr=($(cat images_with_tags.txt))
-		done < images_with_tags.txt
+			repoArr=($(cat $allOrECR))
+		done < $allOrECR
 		for i in "${!repoArr[@]}";
 		do
 			echo "$i	${repoArr[$i]}";
 		done
+		echo ""
 		echo "Enter the number of image you want to retrieve the vuln list for"
 		read getImgNum
 #		anchore-cli image vuln ${repoArr[$i]} all
 		repoArrLen=${#repoArr[@]}
-		echo "Length of repoArr: $repoArrLen"
+#		echo "Length of repoArr: $repoArrLen"
 		chosenRepo=${repoArr[$getImgNum]}
 		echo "Chosen Repo: $chosenRepo"
 		if [ $getImgNum -lt ${#repoArr[@]} ]; then
 			anchVulnResults $chosenRepo
 		fi
-		rw
-		x-www-browser $dest
-		
 	else
-		echo "No listing of images with tags."
+		clear
+		echo "No such listing."
 		echo "Please re-run with option 3."
 	fi
 }
+
+printSpecificImgVuln(){
+	# Choose if print out of all or ECR
+	echo "Get specific vuln report out of"
+	echo "1 - ECR or"
+	echo "2 - all"
+	echo "Q - Quit"
+	read choiceForAllOrECR
+	allOrECR=""
+	case $choiceForAllOrECR in
+		1)	allOrECR=images_with_tags.txt
+			clear
+			printPreferred;;
+		2)	getAllimgsRepos
+			allOrECR=allRepos.txt
+			clear
+			printPreferred;;
+		q|Q)	exit
+	esac
+		rw
+		x-www-browser $dest &
+}
+
+getAllimgsRepos(){
+	anchore-cli image list | grep -oP '([^ sha256\s][a-zA-Z\d\/\.-]+:[a-z\d\_\.-]+)' > allRepos.txt
+}
+
+line="= = = = = = = = = = = = = = = = ="
 
 # HERE LIES THE START OF THE SCRIPT
 clear
 echo "Simple script to get all ECR repos with latest tags"
 echo "$line $line"
-echo "1 - Output all ECR images in repo to repos.txt"
-echo "2 - Output all tags in all the images to tmp/<image>.txt"
-echo "3 - Output images with tags to images_with_tags.txt "
-echo "4 - Add images to anchore to scan"
-echo "    (needs anchore-cli installed and container running)"
-echo "5 - Do all of the above"
-echo "6 - Output Scan results (if any) to HTML and show"
-echo "7 - Get report regarding specific image:tag"
-echo "8 - Show known images:tags"
-echo "9 - Show known repo"
-echo "Q - Quit"
+echo "1  - Output all ECR images in repo to repos.txt"
+echo "2  - Output all tags in all ECR images to tmp/<image>.txt"
+echo "3  - Output images with tags to images_with_tags.txt "
+echo "4  - Add images to anchore to scan"
+echo "	   (needs anchore-cli installed and container running)"
+echo "5  - Do all of the above"
+echo "6  - Output Scan results (if any) to HTML and show"
+echo "7  - Get report regarding specific image:tag"
+echo "8  - Show known ECR images:tags"
+echo "9  - Show known ECR repo"
+echo "99 - Show ALL known images:tags in anchore"
+echo "Q  - Quit"
 
 read INPUT
 
@@ -378,6 +391,11 @@ case $INPUT in
 		echo Known ECR repo is...
 		echo $line
 		getECR
+		;;
+	99)	clear
+		echo "Retrieving all known repos and images from anchore..."
+		echo "$line $line"
+		getAllimgsRepos
 		;;
 	q|Q)	echo ""
 		clear
