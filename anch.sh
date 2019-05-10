@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# V0.02
+# patching tst
+
+# Script Name	anch.sh                                                                                              
+# Author       	Artur Kerge                                                
+# Email        	artur@kerge.eu 
 
 # ABSTRACT
 # name of all repos come from the output of
@@ -12,10 +16,15 @@
 # save the output to a file with a repo name $repo.txt
 
 # grep the imageTags from the $repo.txt to an array
-# save the latest (last) array element to a file?
+# save the latest (last) array element to a file
 
 # ideally it would append the element to a repo name
 # $repo:$element > repo_tags.txt
+
+# TODO
+# * add simple stats to img:tag -- count vulnerabilites
+# * clean up code
+# * write proper header/description
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
@@ -331,8 +340,8 @@ echo "3  - Output images with tags to images_with_tags.txt "
 echo "4  - Add images to anchore to scan"
 echo "	   (needs anchore-cli installed and container running)"
 echo "5  - Do all of the above"
-echo "6  - Output Scan results (if any) to HTML and show"
-echo "7  - Get report regarding specific image:tag"
+echo "6  - Print vuln scan result(s) for ECR to HTML and show"
+echo "6  - Print vuln scan result(s) for specific image:tag to HTML and show"
 echo "8  - Show known ECR images:tags"
 echo "9  - Show known ECR repo"
 echo "99 - Show ALL known images:tags in anchore"
@@ -407,8 +416,3 @@ case $INPUT in
 		echo Not an option. Please re-run.
 		;;
 esac
-
-# TODO
-# get vuln info output by (repo)img:tag
-# list known (repo)img:tag
-# add simple stats to img:tag -- count vulnerabilites
