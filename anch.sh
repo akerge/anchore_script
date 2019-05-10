@@ -21,7 +21,8 @@
 writImgs=""
 skipImgs=""
 repoTagName=""
-
+repoArr=""
+dest=""
 getRepoNames(){
 	echo Getting repos...
 	aws ecr describe-repositories > desc_repos.txt
@@ -84,9 +85,10 @@ addToAnch(){
 	#### TODO: 
 	# ADD ERROR LOG
 	# Timeout feature---if takes too long to respond >5s, then timeout, throw error
-	echo This requires that user has logged in to AWS via CLI
-	echo "Please give the AWS ECR repo URL (sans protocol prefix and trailing slash, please)"
-	read URL
+	isECRknown
+#	echo This requires that user has logged in to AWS via CLI
+#	echo "Please give the AWS ECR repo URL (sans protocol prefix and trailing slash, please)"
+#	read URL
 	while read latestAndGreatest
 	do
 		echo Feeding $URL/$latestAndGreatest to anchore to scan
@@ -96,16 +98,54 @@ addToAnch(){
 
 } 
 
-#dest=""
+ecr=""
+isECRknown(){
+	if [ ! -f ecr.txt ]; then
+printSpecificImgVuln(){
+	while read img
+	do
+		repoArr[]=
+	done < images_with_tags.txt
+}
+
+		echo ""
+		echo "ECR URL needed and o ECR repo name found. Do you want to?"
+		echo ""
+		echo "1	Log in to aws ecr"
+		echo "2	Save to file (already logged in to AWS ECR)"
+		echo "3	Input it manually (numbers.region.amazonaws.com)"
+		read YN
+		case $YN in
+			1)	echo "Getting login..."
+				echo "aws ecr get-login"
+				aws ecr get-login;;
+			# enter case for Y/N options here
+			2)	echo "Saving AWS ECR URL to file (ecr.txt)"
+				getECR;;
+			# N: input it manually
+			3)	echo "Please enter AWS ECR URL:"
+				read ecr;;
+		esac
+	fi
+}
+
+
 anchVulnResults(){
 	echo Specify relative path to a new report directory
 	read reportDir
-	echo Specify container repository where the images were added from:
-	echo "(No protocol and no trailing slash, please)"
-	read ecr
+	# CHECK FOR ecr.txt
+	isECRknown
 	mkdir $reportDir
-	touch $reportDir/index.html
-	dest="$reportDir/index.html"
+#	touch $reportDir/$date-anchore-vuln-report.html
+	dest=$reportDir/All-$date-anchore-vuln-report.html
+	date=$(date +%F)
+	ecr=$(cat ecr.txt)
+	echo "$date"
+	echo "$ecr <- ecr"
+	# If a single repo vuln report is wanted
+	if [ ! -z $1 ]; then
+		dest=$reportDir/$1-$date-anchore-vuln-report.html
+	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
 	echo "<style>
   body {
@@ -169,21 +209,30 @@ pre {
 	</style>
 <title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
 echo "$(date)" >> $dest
-	while read scan
-	do
-		echo Querying $ecr/$scan
-#		echo anchore-cli image vuln $ecr/$scan all INTO $reportDir/$scan
-#		echo "
-#		" >> $dest
-		echo "<h2>$scan</h2>" >> $dest
-#		echo "" >> $dest
-		anchore-cli image vuln $ecr/$scan all >> $dest
-	done < images_with_tags.txt
+	# if no $1, then output all
+	if [ -z $1 ]; then
+		while read scan
+		do
+			echo Querying $ecr/$scan
+#			echo anchore-cli image vuln $ecr/$scan all INTO $reportDir/$scan
+#			echo "
+#			" >> $dest
+			echo "<h2>$scan</h2>" >> $dest
+#			echo "" >> $dest
+			anchore-cli image vuln $ecr/$scan all >> $dest
+		done < images_with_tags.txt
+	else
+	# if $1 exists, then
+		echo "Querying $ecr/$1"
+		echo "<h2>$1</h2>" >> $dest
+		anchore-cli image vuln $ecr/$1 all >> $dest
+	fi
 	echo "</code></pre></html>" >> $dest
+	echo "Location of dest: $dest"
 }
 
 rw(){
-	echo 
+	echo "$dest should start hiliting"
 	echo Highlighting...
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
@@ -198,7 +247,7 @@ rw(){
 }
 
 getVuln(){
-	getRepoNames
+	getRepoNames $1
 	sortImgsInRepo
 	outputImgTagname
 	addToAnch
@@ -207,89 +256,136 @@ getVuln(){
 getResults(){
 	anchVulnResults
 	rw
-	x-www-browser $dest
+	x-www-browser $dest &
 }
 
 getECR(){
-	aws ecr get-login | grep -oP '(?<=https:\/\/)([a-zA-Z0-9.-]*)' > ecr.txt
-	echo "<Drum roll>"
-	cat ecr.txt
-	echo Saved to ecr.txt
+	if [ ! -f ecr.txt ]; then
+		aws ecr get-login | grep -oP '(?<=https:\/\/)([a-zA-Z0-9.-]*)' > ecr.txt
+		echo "<Drum roll>"
+		cat ecr.txt
+		echo Saved to ecr.txt
+	else
+		cat ecr.txt
+	fi
 }
 
 printImagesWithTags(){
 	cat images_with_tags.txt
 }
 
-# HERE LIES THE START OF THE SCRIPT
+line="= = = = = = = = = = = = = = = = ="
 
-echo Simple script to get all repos with latest tags
-echo 1 - Output all images in repo to repos.txt
+printSpecificImgVuln(){
+	# read repos and respective images to an array
+	# print out index and index value
+	if [ -f images_with_tags.txt ]; then
+		# set tab len to 4 for prettier element alignment
+		tabs 4
+		while read img
+		do
+			repoArr=($(cat images_with_tags.txt))
+		done < images_with_tags.txt
+		for i in "${!repoArr[@]}";
+		do
+			echo "$i	${repoArr[$i]}";
+		done
+		echo "Enter the number of image you want to retrieve the vuln list for"
+		read getImgNum
+#		anchore-cli image vuln ${repoArr[$i]} all
+		repoArrLen=${#repoArr[@]}
+		echo "Length of repoArr: $repoArrLen"
+		chosenRepo=${repoArr[$getImgNum]}
+		echo "Chosen Repo: $chosenRepo"
+		if [ $getImgNum -lt ${#repoArr[@]} ]; then
+			anchVulnResults $chosenRepo
+		fi
+		rw
+		x-www-browser $dest
+		
+	else
+		echo "No listing of images with tags."
+		echo "Please re-run with option 3."
+	fi
+}
+
+# HERE LIES THE START OF THE SCRIPT
+clear
+echo "Simple script to get all ECR repos with latest tags"
+echo "$line $line"
+echo "1 - Output all ECR images in repo to repos.txt"
 echo "2 - Output all tags in all the images to tmp/<image>.txt"
-echo 3 - Output images with tags to images_with_tags.txt 
-echo "4 - Add images to anchore to scan (needs anchore-cli installed and container running, will force)"
-echo 5 - Do all of the above
+echo "3 - Output images with tags to images_with_tags.txt "
+echo "4 - Add images to anchore to scan"
+echo "    (needs anchore-cli installed and container running)"
+echo "5 - Do all of the above"
 echo "6 - Output Scan results (if any) to HTML and show"
-echo 7 - Show known repo
-echo 8 - Show known images:tags
-echo 9 TODO Get report regarding specific image:tag
-echo Q - Quit
+echo "7 - Get report regarding specific image:tag"
+echo "8 - Show known images:tags"
+echo "9 - Show known repo"
+echo "Q - Quit"
 
 read INPUT
 
 case $INPUT in
-	1)	echo ""
-		echo = = = = = = = = = = = = = = = = =
+	1)	clear
+		echo $line
 		# noteworthy https://gist.github.com/rpherrera/d7a4d905775653b88e5f
 		# jq is a prerequisite
 		getRepoNames
 		;;
-	2)	echo ""
+	2)	clear
 		echo Sorting images repo by repo, please stand by...
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		sortImgsInRepo
 		;;
-	3)	echo""
+	3)	clear
 		echo Writing image:tag to a file...
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		outputImgTagname
 		;;
-	4)	echo ""
+	4)	clear
 		echo Submitting images to anchore...
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		addToAnch
 		;;
-	5)	echo ""
+	5)	clear
 		echo Here we go!
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		getVuln
 		echo ""
 		echo Give some time for the images to be analyzed and then run the next option.
-		echo = = = = = = = = = = = = = = = = =
+		echo You can check the status of engine by entering
+		echo anchore-cli image list
+		echo $line
 		;;
-	6)	echo ""
+	6)	clear
 		echo Querying vuln results from anchore
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		getResults
 		;;
-	7)	echo ""
-		echo Known ECR repo is...
-		echo = = = = = = = = = = = = = = = = =
-		getECR
+	7)	clear
+		echo "Enter number to retrieve the report of an image:"
+		echo $line
+		printSpecificImgVuln
 		;;
-	8)	echo ""
+	8)	clear
 		echo Known images with respective tags:
-		echo = = = = = = = = = = = = = = = = =
+		echo $line
 		printImagesWithTags
 		;;
-	9)	echo ""
-		echo TODO!
+	9)	clear
+		echo Known ECR repo is...
+		echo $line
+		getECR
 		;;
-	q)	echo ""
+	q|Q)	echo ""
+		clear
 		echo Bye!
 		exit
 		;;
 	*)	echo ""
+		clear
 		echo Not an option. Please re-run.
 		;;
 esac

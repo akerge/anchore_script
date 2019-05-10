@@ -4,6 +4,9 @@ bash script to get repositories with tag names from private AWS ECR, feed them t
 
 ![Example screenshot](https://github.com/akerge/anchore_script/raw/master/img/anch_script.png "Example screenshot")
 
+## Scenario
+TODO why this script was necessary?
+
 ## Prerequisites
 
 * [anchore-cli](https://github.com/anchore/anchore-cli) - saves the trouble of `docker exec anchore-engine anchore cli` every time.
