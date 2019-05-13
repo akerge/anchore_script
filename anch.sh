@@ -27,8 +27,8 @@
 tabs 4	# set tab len to 4 for prettier element alignment
 
 # setting global variable to return from repoTag()
-writImgs=""
-skipImgs=""
+writImgs="0"
+skipImgs="0"
 repoTagName=""
 repoArr=""
 dest=""
@@ -43,12 +43,14 @@ getRepoNames(){
 repoTag(){
 	# greps all the tags
 	arr=($(grep -oP --color '(?<=            ")([a-zA-Z0-9.\/\-_]+)' tmp/$1.txt))
-	last=${#arr[*]}
+#	last=${#arr[*]}
 #	echo $last array len
-	arrEnd=$(($last-1))
+	arrEnd=$(($lat-1))
 #	echo array has $arrEnd indexes
 	# sanity check if no images in repo (empty array)
-	if [ "$last" -eq 1 ]
+#	if [ "$last" -eq 0 ]
+	last=${arr[0]}
+	if [ -z $last ];
 	then
 		echo ! $repoName - nil images, skipping...
 		let skipImgs++
@@ -316,7 +318,8 @@ printSpecificImgVuln(){
 			allOrECR=allRepos.txt
 			clear
 			printPreferred;;
-		q|Q)	exit
+		q|Q)	exit 0
+			;;
 	esac
 		rw
 		x-www-browser $dest &
