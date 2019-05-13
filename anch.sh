@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# patching tst
-
 # Script Name	anch.sh                                                                                              
 # Author       	Artur Kerge                                                
 # Email        	artur@kerge.eu 
@@ -132,8 +130,8 @@ anchVulnResults(){
 	mkdir $reportDir
 #	touch $reportDir/$date-anchore-vuln-report.html
 	pwd=$(pwd)
-	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
 	date=$(date +%F)
+	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
 	ecr=$(cat ecr.txt)
 #	echo "$date"
 #	echo "$ecr <- ecr"
@@ -341,7 +339,7 @@ echo "4  - Add images to anchore to scan"
 echo "	   (needs anchore-cli installed and container running)"
 echo "5  - Do all of the above"
 echo "6  - Print vuln scan result(s) for ECR to HTML and show"
-echo "6  - Print vuln scan result(s) for specific image:tag to HTML and show"
+echo "7  - Print vuln scan result(s) for specific image:tag to HTML and show"
 echo "8  - Show known ECR images:tags"
 echo "9  - Show known ECR repo"
 echo "99 - Show ALL known images:tags in anchore"
@@ -406,7 +404,7 @@ case $INPUT in
 		echo "$line $line"
 		getAllimgsRepos
 		;;
-	q|Q)	echo ""
+	q|Q|0)	echo ""
 		clear
 		echo Bye!
 		exit
