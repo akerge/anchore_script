@@ -66,6 +66,9 @@ repoTag(){
 		#echo $repoName:$repoTagName added
 	fi
 	repoTagName=""
+	sort images_with_tags.txt > tmp.txt
+	cat tmp.txt > images_with_tags.txt
+	rm tmp.txt
 	return
 }
 
@@ -318,7 +321,7 @@ printSpecificImgVuln(){
 			allOrECR=allRepos.txt
 			clear
 			printPreferred;;
-		q|Q)	exit 0
+		q|Q|0)	exit 0
 			;;
 	esac
 		rw
