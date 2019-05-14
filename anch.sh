@@ -264,6 +264,7 @@ placeholderPasta(){
 	crit=$(($tcrit-1))
 	hi=$(($thi-1))
 	med=$(($tmed-1))
+	# TODO add printf for prettier alignment
 	if [ $med -gt 0 ]; then
 		sed -ie "/<\/h2>/a Medium Vulns:	$med" $dest 
 	fi
@@ -293,6 +294,7 @@ placeholderPasta(){
 
 rw(){
 	echo Highlighting...
+	# TODO explain how the awk arguments work
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
 	awk -v pat=High 'index($0, pat) {$0="<span class=hi>" $0} 1' $dest > tmp.html
