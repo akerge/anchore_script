@@ -225,25 +225,32 @@ echo "Total Medium Vulns:	Z" >> $dest
 			echo Querying $ecr/$scan
 			# creating temp file to get the vuln count
 			touch tmp.html
-			destTemp=$dest
-			$dest=tmp.html
+			destTemp=($dest)
+			echo "$dest <- dest"
+			destTMP=$pwd/tmp.html
+			echo "$destTMP <- dest TMP "
+			dest=($destTMP)
+			echo "$dest <- dest after reassigning"
 			echo "<h2>$scan</h2>" >> $dest
 #			pasta
 #			echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-			anchore-cli image vuln $scan all >> $dest
+			anchore-cli image vuln $ecr/$scan all >> $dest
 			# counting vulnerabilities and adding to placeholder
 			placeholderPasta
 		done < images_with_tags.txt
 	else
 	# if $1 exists, then
 		echo "Querying $1"
-		destTemp=$dest
-		$dest=tmp.html
+		destTemp=($dest)
+		echo "$destTemp <- destTemp"
+		echo "$dest <- dest"
+		dest=($pwd/tmp.html)
+		echo "$dest <- dest after tmp reassignment"
 		echo "<h2>$1</h2>" >> $dest
-#		pasta
 #		echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-#		echo ""
 		anchore-cli image vuln $ecr/$1 all >> $dest
+		echo "$ecr <-ecr"
+		cp $dest output_check.txt
 		placeholderPasta #singleImgRequested
 	fi
 	echo "</code></pre></html>" >> $dest
@@ -253,30 +260,31 @@ echo "Total Medium Vulns:	Z" >> $dest
 	sed -ie "s|Z|$medCount|" $dest 
 	echo "Location of report: $dest"
 }
-pasta(){
-	# this function pastes vuln count below image name
-	echo "" >> $dest
-}
+
 placeholderPasta(){
-	tcrit=($(awk '/Critical/ {count++} END{print count}' $dest))
-	thi=($(awk '/High/ {count++} END{print count}' $dest))
-	tmed=($(awk '/Medium/ {count++} END{print count}' $dest))
-	crit=$(($tcrit-1))
-	hi=$(($thi-1))
-	med=$(($tmed-1))
+	crit=`awk '/Critical/ {count++} END{print count}' $dest`
+	hi=`awk '/High/ {count++} END{print count}' $dest`
+	med=`awk '/Medium/ {count++} END{print count}' $dest`
+	# crit=$(($tcrit-1))
+	#hi=$(($thi-1))
+	#med=$(($tmed-1))
 	# TODO add printf for prettier alignment
-	if [ $med -gt 0 ]; then
+	echo "$med <- med"
+	echo "$hi <- hi"
+	echo "$crit <- crit"
+	if [ -e "$med" ]; then
 		sed -ie "/<\/h2>/a Medium Vulns:	$med" $dest 
 	fi
-	if [ $hi -gt 0 ]; then
+	if [ -e "$hi" ]; then
 		sed -ie "/<\/h2>/a High Vulns:	$hi" $dest 
 	fi
-	if [ $crit -gt 0 ];then
+	if [ -e "$crit" ];then
 		sed -ie "/<\/h2>/a Critical Vulns:	$crit" $dest 
 	fi
-		let critCount+=$crit
-		let hiCount+=$hi
-		let medCount+=$med
+		# Note to self: for adding variables $(( )) is used
+		critCount=$((critCount+crit))
+		hiCount=$((hiCount+hi))
+		medCount=$((medCount+med))
 		echo "$critCount <- crit count after counting"
 		echo "$hiCount <- hi count after counting"
 		echo "$medCount <- med count after counting"
@@ -286,7 +294,7 @@ placeholderPasta(){
 #		echo "Total High Vulns:	$hiCount" >> $dest
 #		echo "Total Medium Vulns:	$medCount" >> $dest
 #	fi
-	$dest=$destTemp
+	dest=$destTemp
 	cat tmp.html >> $dest
 	rm tmp.html
 #	echo "" >> $dest
