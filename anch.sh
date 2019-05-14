@@ -27,11 +27,15 @@
 tabs 4	# set tab len to 4 for prettier element alignment
 
 # setting global variable to return from repoTag()
+critCount="0"
+hiCount="0"
+medCount="0"
 writImgs="0"
 skipImgs="0"
 repoTagName=""
 repoArr=""
 dest=""
+destTemp=""
 getRepoNames(){
 	echo Getting repos...
 	aws ecr describe-repositories > desc_repos.txt
@@ -133,17 +137,16 @@ anchVulnResults(){
 	# CHECK FOR ecr.txt
 	isECRknown
 	mkdir $reportDir
-#	touch $reportDir/$date-anchore-vuln-report.html
 	pwd=$(pwd)
 	date=$(date +%F)
 	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
 	ecr=$(cat ecr.txt)
-#	echo "$date"
-#	echo "$ecr <- ecr"
 	# If a single repo vuln report is wanted
+	echo "$1 <- argument"
+	# Commenting out for testing. At the time of writing grep fails and no $short
 	if [ ! -z $1 ]; then
-		short=$(echo "$1" | grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
-#		echo "$short <- short"
+		short=$(echo "$1" ) #| grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
+		echo "$short <- short"
 		dest=$pwd/$reportDir/$short-$date-anchore-vuln-report.html
 	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
@@ -209,31 +212,86 @@ pre {
 	</style>
 <title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
 echo "$(date)" >> $dest
+echo ""
+echo "Total Critical Vulns:	ZZZ" >> $dest
+echo "Total High Vulns:	ZZ" >> $dest
+echo "Total Medium Vulns:	Z" >> $dest
+#placeholderPasta total
 	# if no $1, then output all
 	if [ -z $1 ]; then
 		while read scan
 		do
 			echo ""
 			echo Querying $ecr/$scan
-#			echo anchore-cli image vuln $ecr/$scan all INTO $reportDir/$scan
-#			echo "
-#			" >> $dest
+			# creating temp file to get the vuln count
+			touch tmp.html
+			destTemp=$dest
+			$dest=tmp.html
 			echo "<h2>$scan</h2>" >> $dest
-#			echo "" >> $dest
-			anchore-cli image vuln $ecr/$scan all >> $dest
+#			pasta
+#			echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
+			anchore-cli image vuln $scan all >> $dest
+			# counting vulnerabilities and adding to placeholder
+			placeholderPasta
 		done < images_with_tags.txt
 	else
 	# if $1 exists, then
 		echo "Querying $1"
+		destTemp=$dest
+		$dest=tmp.html
 		echo "<h2>$1</h2>" >> $dest
-		anchore-cli image vuln $1 all >> $dest
+#		pasta
+#		echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
+#		echo ""
+		anchore-cli image vuln $ecr/$1 all >> $dest
+		placeholderPasta #singleImgRequested
 	fi
 	echo "</code></pre></html>" >> $dest
+	echo ""
+	sed -ie "s|ZZZ|$critCount|" $dest 
+	sed -ie "s|ZZ|$hiCount|" $dest 
+	sed -ie "s|Z|$medCount|" $dest 
 	echo "Location of report: $dest"
+}
+pasta(){
+	# this function pastes vuln count below image name
+	echo "" >> $dest
+}
+placeholderPasta(){
+	tcrit=($(awk '/Critical/ {count++} END{print count}' $dest))
+	thi=($(awk '/High/ {count++} END{print count}' $dest))
+	tmed=($(awk '/Medium/ {count++} END{print count}' $dest))
+	crit=$(($tcrit-1))
+	hi=$(($thi-1))
+	med=$(($tmed-1))
+	if [ $med -gt 0 ]; then
+		sed -ie "/<\/h2>/a Medium Vulns:	$med" $dest 
+	fi
+	if [ $hi -gt 0 ]; then
+		sed -ie "/<\/h2>/a High Vulns:	$hi" $dest 
+	fi
+	if [ $crit -gt 0 ];then
+		sed -ie "/<\/h2>/a Critical Vulns:	$crit" $dest 
+	fi
+		let critCount+=$crit
+		let hiCount+=$hi
+		let medCount+=$med
+		echo "$critCount <- crit count after counting"
+		echo "$hiCount <- hi count after counting"
+		echo "$medCount <- med count after counting"
+#	else
+#		echo ""
+#		echo "Total Critical Vulns:	$critCount" >> $dest
+#		echo "Total High Vulns:	$hiCount" >> $dest
+#		echo "Total Medium Vulns:	$medCount" >> $dest
+#	fi
+	$dest=$destTemp
+	cat tmp.html >> $dest
+	rm tmp.html
+#	echo "" >> $dest
 }
 
 rw(){
-#	echo "$dest should start hiliting"
 	echo Highlighting...
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
@@ -242,7 +300,8 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-	sed -r 's|(https?://[a-zA-Z./~0-9?-]+)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
+	# Add commment here, already forgot how this works.
+	sed -r 's|(https?://[a-zA-Z.\~0-9\=\?-]+)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest 
 	echo "Done highlighting & URL-ing"
 }
@@ -344,7 +403,7 @@ echo "3  - Output images with tags to images_with_tags.txt "
 echo "4  - Add images to anchore to scan"
 echo "	   (needs anchore-cli installed and container running)"
 echo "5  - Do all of the above"
-echo "6  - Print vuln scan result(s) for ECR to HTML and show"
+echo "6  - Print ALL vuln scan result(s) for ECR to HTML and show"
 echo "7  - Print vuln scan result(s) for specific image:tag to HTML and show"
 echo "8  - Show known ECR images:tags"
 echo "9  - Show known ECR repo"
