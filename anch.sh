@@ -274,24 +274,18 @@ placeholderPasta(){
 	crit=`awk '/Critical/ {count++} END{print count}' $dest`
 	hi=`awk '/High/ {count++} END{print count}' $dest`
 	med=`awk '/Medium/ {count++} END{print count}' $dest`
-	# crit=$(($tcrit-1))
-	#hi=$(($thi-1))
-	#med=$(($tmed-1))
-	# TODO add printf for prettier alignment
-	# No frikken idea to do it nicely, without hacks
 	echo "$med <- med"
 	echo "$hi <- hi"
 	echo "$crit <- crit"
-#	pront=printf "%-21s%8u\n"
-#	if [ -e "$med" ]; then
+	if [ "$med" -gt 0 ]; then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest 
-#	fi
-#	if [ -e "$hi" ]; then
+	fi
+	if [ "$hi" -gt 0 ]; then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "High Vulns:" $hi)" $dest 
-#	fi
-#	if [ -e "$crit" ];then
+	fi
+	if [ "$crit" -gt 0 ];then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Critical Vulns:" $crit)" $dest 
-#	fi
+	fi
 		# Note to self: for adding variables '$(( ))' is used
 		critCount=$((critCount+crit))
 		hiCount=$((hiCount+hi))
