@@ -217,7 +217,6 @@ echo ""
 echo "ZZZ" >> $dest
 echo "ZZ" >> $dest
 echo "Z" >> $dest
-#placeholderPasta total
 	# if no $1, then output all
 	if [ -z $1 ]; then
 		while read scan
@@ -261,12 +260,9 @@ echo "Z" >> $dest
 	# for the sed to substitute with printf nicely 
 #	sed -ie "|ZZZ|a $(printf "%-16s%8u" "erabilities:" $critCount)" $dest 
 #	sed -ie "s|ZZZ|$critCount|" $dest # <- original replacement
-	sed -ie "/ZZZ/c $(printf "%-20s%8u" "Critical Vulns:" $critCount)" $dest
-	sed -ie "/ZZ/c $(printf "%-20s%8u" "High Vulns:" $hiCount)" $dest
-	sed -ie "/Z/c $(printf "%-20s%8u" "Medium Vulns:" $medCount)" $dest
-#	sed -ie "s|ZZZ|$critCount|" $dest 
-#	sed -ie "s|ZZ|$hiCount|" $dest 
-#	sed -ie "s|Z|$medCount|" $dest 
+	sed -ie "/ZZZ/c $(printf "%-22s%8u" "Total Critical Vulns:" $critCount)" $dest
+	sed -ie "/ZZ/c $(printf "%-22s%8u" "Total High Vulns:" $hiCount)" $dest
+	sed -ie "/Z/c $(printf "%-22s%8u" "Total Medium Vulns:" $medCount)" $dest
 	echo "Location of report: $dest"
 }
 
@@ -293,18 +289,11 @@ placeholderPasta(){
 		echo "$critCount <- crit count after counting"
 		echo "$hiCount <- hi count after counting"
 		echo "$medCount <- med count after counting"
-#	else
-#		echo ""
-#		echo "Total Critical Vulns:	$critCount" >> $dest
-#		echo "Total High Vulns:	$hiCount" >> $dest
-#		echo "Total Medium Vulns:	$medCount" >> $dest
-#	fi
 	echo "$dest <- pre-destTemp"
 	dest=$destTemp
 	echo "$dest <- post-destTemp"
 	cat tmp.html >> $dest
 	rm tmp.html
-#	echo "" >> $dest
 }
 
 rw(){
@@ -318,9 +307,11 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-	# Add commment here, already forgot how this works.
-	sed -r 's|(https?://[a-zA-Z.\~0-9\=\?-]+)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
+	echo "$dest <- dest before sed URL-ing"
+	# TODO explain how this command works
+	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html #
 	mv tmp.html $dest 
+	rm tmp.html
 	echo "Done highlighting & URL-ing"
 }
 
@@ -398,11 +389,12 @@ printSpecificImgVuln(){
 			allOrECR=allRepos.txt
 			clear
 			printPreferred;;
-		q|Q|0)	exit 0
+		*)	echo "Bye!"
+			exit 0
 			;;
 	esac
-		rw
-		x-www-browser $dest &
+	rw
+	x-www-browser $dest &
 }
 
 getAllimgsRepos(){
