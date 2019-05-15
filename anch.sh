@@ -226,11 +226,11 @@ echo "Z" >> $dest
 			# creating temp file to get the vuln count
 			touch tmp.html
 			destTemp=($dest)
-			echo "$dest <- dest"
+#			echo "$dest <- dest"
 			destTMP=$pwd/tmp.html
-			echo "$destTMP <- dest TMP "
+#			echo "$destTMP <- dest TMP "
 			dest=($destTMP)
-			echo "$dest <- dest after reassigning"
+#			echo "$dest <- dest after reassigning"
 			echo "<h2>$scan</h2>" >> $dest
 #			pasta
 #			echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
@@ -242,14 +242,14 @@ echo "Z" >> $dest
 	# if $1 exists, then
 		echo "Querying $1"
 		destTemp=($dest)
-		echo "$destTemp <- destTemp"
-		echo "$dest <- dest"
+#		echo "$destTemp <- destTemp"
+#		echo "$dest <- dest"
 		dest=($pwd/tmp.html)
-		echo "$dest <- dest after tmp reassignment"
+#		echo "$dest <- dest after tmp reassignment"
 		echo "<h2>$1</h2>" >> $dest
 #		echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
 		anchore-cli image vuln $ecr/$1 all >> $dest
-		echo "$ecr <-ecr"
+#		echo "$ecr <-ecr"
 		cp $dest output_check.txt
 		placeholderPasta #singleImgRequested
 	fi
@@ -270,16 +270,16 @@ placeholderPasta(){
 	crit=`awk '/Critical/ {count++} END{print count}' $dest`
 	hi=`awk '/High/ {count++} END{print count}' $dest`
 	med=`awk '/Medium/ {count++} END{print count}' $dest`
-	echo "$med <- med"
-	echo "$hi <- hi"
-	echo "$crit <- crit"
-	if [ "$med" -gt 0 ]; then
+#	echo "$med <- med"
+#	echo "$hi <- hi"
+#	echo "$crit <- crit"
+	if [[ "$med" -gt 0 && ! -z "$med" ]]; then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest 
 	fi
-	if [ "$hi" -gt 0 ]; then
+	if [[ "$hi" -gt 0 && ! -z "$med" ]]; then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "High Vulns:" $hi)" $dest 
 	fi
-	if [ "$crit" -gt 0 ];then
+	if [[ "$crit" -gt 0 && ! -z "$med" ]];then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Critical Vulns:" $crit)" $dest 
 	fi
 		# Note to self: for adding variables '$(( ))' is used
@@ -289,9 +289,9 @@ placeholderPasta(){
 		echo "$critCount <- crit count after counting"
 		echo "$hiCount <- hi count after counting"
 		echo "$medCount <- med count after counting"
-	echo "$dest <- pre-destTemp"
+#	echo "$dest <- pre-destTemp"
 	dest=$destTemp
-	echo "$dest <- post-destTemp"
+#	echo "$dest <- post-destTemp"
 	cat tmp.html >> $dest
 	rm tmp.html
 }
@@ -307,7 +307,7 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-	echo "$dest <- dest before sed URL-ing"
+#	echo "$dest <- dest before sed URL-ing"
 	# TODO explain how this command works
 	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html #
 	mv tmp.html $dest 
