@@ -213,9 +213,10 @@ pre {
 <title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
 echo "$(date)" >> $dest
 echo ""
-echo "Total Critical Vulns:	ZZZ" >> $dest
-echo "Total High Vulns:	ZZ" >> $dest
-echo "Total Medium Vulns:	Z" >> $dest
+# Total Vuln Count goes here
+echo "ZZZ" >> $dest
+echo "ZZ" >> $dest
+echo "Z" >> $dest
 #placeholderPasta total
 	# if no $1, then output all
 	if [ -z $1 ]; then
@@ -255,9 +256,17 @@ echo "Total Medium Vulns:	Z" >> $dest
 	fi
 	echo "</code></pre></html>" >> $dest
 	echo ""
-	sed -ie "s|ZZZ|$critCount|" $dest 
-	sed -ie "s|ZZ|$hiCount|" $dest 
-	sed -ie "s|Z|$medCount|" $dest 
+	#TODO
+	# for the script to go thru all ifs in placeholderPasta
+	# for the sed to substitute with printf nicely 
+#	sed -ie "|ZZZ|a $(printf "%-16s%8u" "erabilities:" $critCount)" $dest 
+#	sed -ie "s|ZZZ|$critCount|" $dest # <- original replacement
+	sed -ie "/ZZZ/c $(printf "%-20s%8u" "Critical Vulns:" $critCount)" $dest
+	sed -ie "/ZZ/c $(printf "%-20s%8u" "High Vulns:" $hiCount)" $dest
+	sed -ie "/Z/c $(printf "%-20s%8u" "Medium Vulns:" $medCount)" $dest
+#	sed -ie "s|ZZZ|$critCount|" $dest 
+#	sed -ie "s|ZZ|$hiCount|" $dest 
+#	sed -ie "s|Z|$medCount|" $dest 
 	echo "Location of report: $dest"
 }
 
@@ -269,19 +278,21 @@ placeholderPasta(){
 	#hi=$(($thi-1))
 	#med=$(($tmed-1))
 	# TODO add printf for prettier alignment
+	# No frikken idea to do it nicely, without hacks
 	echo "$med <- med"
 	echo "$hi <- hi"
 	echo "$crit <- crit"
-	if [ -e "$med" ]; then
-		sed -ie "/<\/h2>/a Medium Vulns:	$med" $dest 
-	fi
-	if [ -e "$hi" ]; then
-		sed -ie "/<\/h2>/a High Vulns:	$hi" $dest 
-	fi
-	if [ -e "$crit" ];then
-		sed -ie "/<\/h2>/a Critical Vulns:	$crit" $dest 
-	fi
-		# Note to self: for adding variables $(( )) is used
+#	pront=printf "%-21s%8u\n"
+#	if [ -e "$med" ]; then
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest 
+#	fi
+#	if [ -e "$hi" ]; then
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "High Vulns:" $hi)" $dest 
+#	fi
+#	if [ -e "$crit" ];then
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Critical Vulns:" $crit)" $dest 
+#	fi
+		# Note to self: for adding variables '$(( ))' is used
 		critCount=$((critCount+crit))
 		hiCount=$((hiCount+hi))
 		medCount=$((medCount+med))
@@ -294,7 +305,9 @@ placeholderPasta(){
 #		echo "Total High Vulns:	$hiCount" >> $dest
 #		echo "Total Medium Vulns:	$medCount" >> $dest
 #	fi
+	echo "$dest <- pre-destTemp"
 	dest=$destTemp
+	echo "$dest <- post-destTemp"
 	cat tmp.html >> $dest
 	rm tmp.html
 #	echo "" >> $dest
@@ -302,6 +315,7 @@ placeholderPasta(){
 
 rw(){
 	echo Highlighting...
+	echo "$dest <- dest"
 	# TODO explain how the awk arguments work
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
