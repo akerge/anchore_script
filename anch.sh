@@ -20,7 +20,7 @@
 # $repo:$element > repo_tags.txt
 
 # TODO
-# * add simple stats to img:tag -- count vulnerabilites
+# x add simple stats to img:tag -- count vulnerabilites
 # * clean up code
 # * write proper header/description
 
@@ -36,6 +36,8 @@ repoTagName=""
 repoArr=""
 dest=""
 destTemp=""
+repoName=""
+imgName=""
 getRepoNames(){
 	echo Getting repos...
 	aws ecr describe-repositories > desc_repos.txt
@@ -61,7 +63,6 @@ repoTag(){
 		return 1
 	else
 		lastEl=${arr[$arrEnd]}
-		#echo $lastEl this is the last element
 		repoTagName=$lastEl
 #		echo "$lastEl <- last element of array"
 		echo $repoName:$repoTagName >> images_with_tags.txt
@@ -104,17 +105,18 @@ outputImgTagname(){
 	echo "$skipImgs images skipped."
 }
 
-ecr=""
+repo=""
 isECRknown(){
 	if [ ! -f ecr.txt ]; then
 		getECR	
 	else
-		ecr=$(cat ecr.txt)
+		repo=$(cat ecr.txt)
 	fi
 }
 
 addToAnch(){
-	#### TODO: 
+	# TODO:
+        # Count new (not analyzed) images and print result	
 	# ADD ERROR LOG
 	# Timeout feature---if takes too long to respond >5s, then timeout, throw error
 	isECRknown
@@ -123,9 +125,9 @@ addToAnch(){
 #	read URL
 	while read latestAndGreatest
 	do
-		echo "Feeding $ecr/$latestAndGreatest to anchore to scan"
+		echo "Feeding $repo/$latestAndGreatest to anchore to scan"
 		echo "$line $line"
-		anchore-cli image add $ecr/$latestAndGreatest #--force
+		anchore-cli image add $repo/$latestAndGreatest #--force
 	done < images_with_tags.txt
 	echo Done feeding.
 
@@ -134,13 +136,12 @@ addToAnch(){
 anchVulnResults(){
 	echo Specify relative path to a new report directory
 	read reportDir
-	# CHECK FOR ecr.txt
+	# CHECK FOR REPO (ecr.txt)
 	isECRknown
 	mkdir $reportDir
 	pwd=$(pwd)
 	date=$(date +%F)
 	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
-	ecr=$(cat ecr.txt)
 	# If a single repo vuln report is wanted
 	echo "$1 <- argument"
 	# Commenting out for testing. At the time of writing grep fails and no $short
@@ -217,12 +218,18 @@ echo ""
 echo "ZZZ" >> $dest
 echo "ZZ" >> $dest
 echo "Z" >> $dest
+
+	# TODO
+	# remove code duplication below, make into a function, say, queryAllOrSingle
+	# filter repo name and img:tag in isECRknown()
+	# so that it could be fed thru the queryAllOrSingle
+
 	# if no $1, then output all
 	if [ -z $1 ]; then
 		while read scan
 		do
 			echo ""
-			echo Querying $ecr/$scan
+			echo Querying $repo/$scan
 			# creating temp file to get the vuln count
 			touch tmp.html
 			destTemp=($dest)
@@ -234,7 +241,7 @@ echo "Z" >> $dest
 			echo "<h2>$scan</h2>" >> $dest
 #			pasta
 #			echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-			anchore-cli image vuln $ecr/$scan all >> $dest
+			anchore-cli image vuln $repo/$scan all >> $dest
 			# counting vulnerabilities and adding to placeholder
 			placeholderPasta
 		done < images_with_tags.txt
@@ -248,18 +255,13 @@ echo "Z" >> $dest
 #		echo "$dest <- dest after tmp reassignment"
 		echo "<h2>$1</h2>" >> $dest
 #		echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-		anchore-cli image vuln $ecr/$1 all >> $dest
-#		echo "$ecr <-ecr"
+		anchore-cli image vuln $repo/$1 all >> $dest
+#		echo "$repo <-repo"
 		cp $dest output_check.txt
 		placeholderPasta #singleImgRequested
 	fi
 	echo "</code></pre></html>" >> $dest
 	echo ""
-	#TODO
-	# for the script to go thru all ifs in placeholderPasta
-	# for the sed to substitute with printf nicely 
-#	sed -ie "|ZZZ|a $(printf "%-16s%8u" "erabilities:" $critCount)" $dest 
-#	sed -ie "s|ZZZ|$critCount|" $dest # <- original replacement
 	sed -ie "/ZZZ/c $(printf "%-22s%8u" "Total Critical Vulns:" $critCount)" $dest
 	sed -ie "/ZZ/c $(printf "%-22s%8u" "Total High Vulns:" $hiCount)" $dest
 	sed -ie "/Z/c $(printf "%-22s%8u" "Total Medium Vulns:" $medCount)" $dest
@@ -286,9 +288,11 @@ placeholderPasta(){
 		critCount=$((critCount+crit))
 		hiCount=$((hiCount+hi))
 		medCount=$((medCount+med))
-		echo "$critCount <- crit count after counting"
-		echo "$hiCount <- hi count after counting"
-		echo "$medCount <- med count after counting"
+		# TODO
+		# printf output below
+		echo "$critCount <- total crit count"
+		echo "$hiCount <- total hi count after"
+		echo "$medCount <- total med count after"
 #	echo "$dest <- pre-destTemp"
 	dest=$destTemp
 #	echo "$dest <- post-destTemp"
@@ -362,9 +366,20 @@ printPreferred(){
 		repoArrLen=${#repoArr[@]}
 #		echo "Length of repoArr: $repoArrLen"
 		chosenRepo=${repoArr[$getImgNum]}
-		echo "Chosen Repo: $chosenRepo"
-		if [ $getImgNum -lt ${#repoArr[@]} ]; then
+		if [[ $getImgNum -lt ${#repoArr[@]} && ! -z $getImg ]]; then
+			echo "Chosen Repo: $chosenRepo"
+		# TODO 
+		# check if $chosenRepo has (amazonaws) in it
+		# if not:
+		# separate $chosenRepo to repo and img
+		# ([a-z\.\/]+\/+) captures repo
+		# (?<=\/)([a-zA-Z-9\?-]+:[a-zA-Z0-9\_-]+) captures img:tag
+		# feed the $repoName$imgName to anchVulnResults
 			anchVulnResults $chosenRepo
+		else 
+			echo "Input out of bounds."
+			echo "Bye!"
+			exit 0
 		fi
 	else
 		clear
@@ -399,6 +414,7 @@ printSpecificImgVuln(){
 
 getAllimgsRepos(){
 	anchore-cli image list | grep -oP '([^ sha256\s][a-zA-Z\d\/\.-]+:[a-z\d\_\.-]+)' > allRepos.txt
+#	cat allRepos.txt
 }
 
 line="= = = = = = = = = = = = = = = = ="
@@ -478,6 +494,7 @@ case $INPUT in
 		echo "Retrieving all known repos and images from anchore..."
 		echo "$line $line"
 		getAllimgsRepos
+		cat allRepos.txt
 		;;
 	q|Q|0)	echo ""
 		clear
