@@ -266,6 +266,9 @@ echo "Z" >> $dest
 	sed -ie "/ZZ/c $(printf "%-22s%8u" "Total High Vulns:" $hiCount)" $dest
 	sed -ie "/Z/c $(printf "%-22s%8u" "Total Medium Vulns:" $medCount)" $dest
 	echo "Location of report: $dest"
+	e="e"
+	echo "removing $dest$e"
+	rm $dest$e
 }
 
 placeholderPasta(){
@@ -313,7 +316,7 @@ rw(){
 	echo Making URL-s clickable...
 #	echo "$dest <- dest before sed URL-ing"
 	# TODO explain how this command works
-	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html #
+	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest 
 	rm tmp.html
 	echo "Done highlighting & URL-ing"
