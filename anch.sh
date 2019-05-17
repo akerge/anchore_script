@@ -138,11 +138,14 @@ anchVulnResults(){
 	echo "1 - all vulnerabilities"
 	echo "2 - os vulns"
 	echo "3 - non-os vulns"
+	echo "* - enter any other value to exit" 
 	read vulnChoice
 	case $vulnChoice in
 		1) vulnSelection="all" ;;
 		2) vulnSelection="os" ;;
 		3) vulnSelection="non-os" ;;
+		*) echo "Bye!"
+			exit ;;
 	esac
 	echo "Specify relative path to a new report directory"
 	read reportDir
