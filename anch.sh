@@ -134,21 +134,31 @@ addToAnch(){
 }
 
 anchVulnResults(){
-	echo Specify relative path to a new report directory
+	echo "Provide vuln spec:"
+	echo "1 - all vulnerabilities"
+	echo "2 - os vulns"
+	echo "3 - non-os vulns"
+	read vulnChoice
+	case $vulnChoice in
+		1) vulnSelection="all" ;;
+		2) vulnSelection="os" ;;
+		3) vulnSelection="non-os" ;;
+	esac
+	echo "Specify relative path to a new report directory"
 	read reportDir
 	# CHECK FOR REPO (ecr.txt)
 	isECRknown
 	mkdir $reportDir
 	pwd=$(pwd)
 	date=$(date +%F)
-	dest=$pwd/$reportDir/All-$date-anchore-vuln-report.html
+	dest=$pwd/$reportDir/All_imgs-$vulnSelection-vulns-$date-anchore_report.html
 	# If a single repo vuln report is wanted
 	echo "$1 <- argument"
 	# Commenting out for testing. At the time of writing grep fails and no $short
 	if [ ! -z $1 ]; then
-		short=$(echo "$1" ) #| grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
+		short=$(echo "$1" | grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
 		echo "$short <- short"
-		dest=$pwd/$reportDir/$short-$date-anchore-vuln-report.html
+		dest=$pwd/$reportDir/$short-$vulnSelection-vulns-$date-anchore_report.html
 	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
 	echo "<style>
@@ -211,7 +221,7 @@ pre {
   margin: 0;
 }
 	</style>
-<title>$(date) anchore query</title></head><body><pre><code><h1>Anchore vulnerability scan results</h1>" >> $dest
+<title>$(date) anchore query</title></head><body><pre><code><h1>Anchore $vulnSelection vulnerability scan results</h1>" >> $dest
 echo "$(date)" >> $dest
 echo ""
 # Total Vuln Count goes here
@@ -233,15 +243,10 @@ echo "Z" >> $dest
 			# creating temp file to get the vuln count
 			touch tmp.html
 			destTemp=($dest)
-#			echo "$dest <- dest"
 			destTMP=$pwd/tmp.html
-#			echo "$destTMP <- dest TMP "
 			dest=($destTMP)
-#			echo "$dest <- dest after reassigning"
 			echo "<h2>$scan</h2>" >> $dest
-#			pasta
-#			echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-			anchore-cli image vuln $repo/$scan all >> $dest
+			anchore-cli image vuln $repo/$scan $vulnSelection >> $dest
 			# counting vulnerabilities and adding to placeholder
 			placeholderPasta
 		done < images_with_tags.txt
@@ -249,15 +254,10 @@ echo "Z" >> $dest
 	# if $1 exists, then
 		echo "Querying $1"
 		destTemp=($dest)
-#		echo "$destTemp <- destTemp"
-#		echo "$dest <- dest"
 		dest=($pwd/tmp.html)
-#		echo "$dest <- dest after tmp reassignment"
 		echo "<h2>$1</h2>" >> $dest
-#		echo "IMG_VULN_COUNT_PLACEHOLDER" >> $dest
-		anchore-cli image vuln $repo/$1 all >> $dest
-#		echo "$repo <-repo"
-		cp $dest output_check.txt
+#		anchore-cli image vuln $repo/$1 $vulnSelection >> $dest
+		anchore-cli image vuln $1 $vulnSelection >> $dest
 		placeholderPasta #singleImgRequested
 	fi
 	echo "</code></pre></html>" >> $dest
@@ -366,7 +366,8 @@ printPreferred(){
 		repoArrLen=${#repoArr[@]}
 #		echo "Length of repoArr: $repoArrLen"
 		chosenRepo=${repoArr[$getImgNum]}
-		if [[ $getImgNum -lt ${#repoArr[@]} && ! -z $getImg ]]; then
+			echo "Chosen Repo: $chosenRepo"
+		if [[ $getImgNum -lt ${#repoArr[@]} ]]; then # && ! -z $getImg ]]; then
 			echo "Chosen Repo: $chosenRepo"
 		# TODO 
 		# check if $chosenRepo has (amazonaws) in it
