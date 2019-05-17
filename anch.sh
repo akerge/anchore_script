@@ -313,7 +313,7 @@ rw(){
 	echo Making URL-s clickable...
 #	echo "$dest <- dest before sed URL-ing"
 	# TODO explain how this command works
-	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*)(CVE[0-9A-Za-z-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html #
+	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html #
 	mv tmp.html $dest 
 	rm tmp.html
 	echo "Done highlighting & URL-ing"
