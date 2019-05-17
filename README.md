@@ -4,7 +4,7 @@
 
 bash script to get vulnerability reports from repo. Supports private AWS ECR.
 
-Script asks for ECR address, retrieves repos, sorts images by latest, feeds them to anchore, and retrieve the result which is shown in a nicely formatted HTML. Can retrieve report for a single repo:img.
+Script asks for ECR address, retrieves repos, sorts images by latest, feeds them to anchore, and retrieve the result which is shown in a nicely formatted HTML. Can retrieve report for a single repo:tag.
 
 ![Example screenshot](https://github.com/akerge/anchore_script/raw/master/img/anch_script.png "Example screenshot")
 
