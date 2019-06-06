@@ -22,7 +22,8 @@
 # TODO
 # x add simple stats to img:tag -- count vulnerabilites
 # * clean up code
-# * write proper header/description
+# x write proper header/description
+# printf instead vuln count echo
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
@@ -79,7 +80,9 @@ repoTag(){
 
 
 sortImgsInRepo(){
-	mkdir tmp/
+	if [ ! -d tmp ]; then
+		mkdir tmp/
+	fi
 	echo "Starting sort..."
 	while read repo
 	do
@@ -151,7 +154,9 @@ anchVulnResults(){
 	read reportDir
 	# CHECK FOR REPO (ecr.txt)
 	isECRknown
-	mkdir $reportDir
+	if [ ! -d $reportDir ];then
+		mkdir $reportDir
+	fi
 	pwd=$(pwd)
 	date=$(date +%F)
 	dest=$pwd/$reportDir/All_imgs-$vulnSelection-vulns-$date-anchore_report.html
