@@ -13,28 +13,32 @@
 # Query all images from ECR by running `aws ecr describe-repositories` in
 # getRepoNames(), output of `aws` is then `grep`ed to get names of images in
 # repositories.
-# Option 2
+# Option 2.
 # Sorts the image names alphabetically in repos.txt. If no repos.txt file found,
 # then executes option 1, followed by the alphabetical sort.
-# Option 3
-# Fetches the latest tags of images and writes them to images_with_tags.txt
-# json output then has been grepped twice
-# once to get the repositoryName and then to grep out the name itself without repositoryName
-
-# query all images in repo
-# save the output to a file with a repo name $repo.txt
-
-# grep the imageTags from the $repo.txt to an array
-# save the latest (last) array element to a file
-
-# ideally it would append the element to a repo name
-# $repo:$element > repo_tags.txt
+# Option 3.
+# Fetches the latest tags of images and writes them to images_with_tags.txt by
+# running outputImgTagname. repoTag does the grep'ing of latest tag.
+# Option 4.
+# Feeds the new/latest tags to anchore.
+# Option 5.
+# All previous steps in one option.
+# Option 6.
+# Output vulnerability scan results of the ECR images to a HTML which then will
+# be shown in the default browser. There is a choice between all, os, all non-os
+# vulnerabilities to show.
+# Option 7.
+# Output vuln report for specific image:tag, which has been added to anchore,
+# Option 8.
+# Echo all ECR images and tags (`cat images_with_tags.txt`).
+# Option 9.
+# Echo the ECR repo name, by `cat ecr.txt`. If no file, tries to retrieve it by
+# executing `aws ecr get-login`
 
 # TODO
-# x add simple stats to img:tag -- count vulnerabilites
 # * clean up code
-# x write proper header/description
-# printf instead vuln count echo
+# * printf instead vuln count echo
+# * Count new (not analyzed) images and print result in addToAnch()
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
@@ -50,6 +54,7 @@ dest=""
 destTemp=""
 repoName=""
 imgName=""
+repo=""
 getRepoNames(){
 	echo Getting repos...
 	aws ecr describe-repositories > desc_repos.txt
@@ -59,14 +64,13 @@ getRepoNames(){
 }
 
 repoTag(){
-	# greps all the tags
+	# grep the imageTags from the $repo.txt to an array
+	# save the latest (last) array element to a file
 	arr=($(grep -oP --color '(?<=            ")([a-zA-Z0-9.\/\-_]+)' tmp/$1.txt))
-#	last=${#arr[*]}
-#	echo $last array len
+	# ^ greps all the tags
 	arrEnd=$(($lat-1))
 #	echo array has $arrEnd indexes
 	# sanity check if no images in repo (empty array)
-#	if [ "$last" -eq 0 ]
 	last=${arr[0]}
 	if [ -z $last ];
 	then
@@ -118,6 +122,7 @@ outputImgTagname(){
 	while read repoName
 	do
 		echo "Writing $repoName:$repoTagName"
+		# repoTag does the all the heavy lifting of grep'ing latest tag.
 		repoTag $repoName
 	done < repos.txt
 	echo ""
@@ -127,7 +132,6 @@ outputImgTagname(){
 	echo "$skipImgs images skipped."
 }
 
-repo=""
 isECRknown(){
 	if [ ! -f ecr.txt ]; then
 		getECR
@@ -137,14 +141,8 @@ isECRknown(){
 }
 
 addToAnch(){
-	# TODO:
-        # Count new (not analyzed) images and print result
-	# ADD ERROR LOG
-	# Timeout feature---if takes too long to respond >5s, then timeout, throw error
 	isECRknown
-#	echo This requires that user has logged in to AWS via CLI
-#	echo "Please give the AWS ECR repo URL (sans protocol prefix and trailing slash, please)"
-#	read URL
+#	^ This requires that user has logged in to AWS via CLI
 	while read latestAndGreatest
 	do
 		echo "Feeding $repo/$latestAndGreatest to anchore to scan"
