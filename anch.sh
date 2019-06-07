@@ -1,12 +1,23 @@
 #!/bin/bash
 
-# Script Name	anch.sh                                                                                              
-# Author       	Artur Kerge                                                
-# Email        	artur@kerge.eu 
+# Script Name   anch.sh
+# Author       	Artur Kerge
+# Email        	artur@kerge.eu
 
 # ABSTRACT
-# name of all repos come from the output of
-# `aws ecr describe-repositories`
+# This script was made for easier and quicker adding new docker image tags from
+# Bezos' (AWS) Elastic Container Repo (ECR) and to get a report for them.
+#
+# The general flow is as follows:
+# Option 1.
+# Query all images from ECR by running `aws ecr describe-repositories` in
+# getRepoNames(), output of `aws` is then `grep`ed to get names of images in
+# repositories.
+# Option 2
+# Sorts the image names alphabetically in repos.txt. If no repos.txt file found,
+# then executes option 1, followed by the alphabetical sort.
+# Option 3
+# Fetches the latest tags of images and writes them to images_with_tags.txt
 # json output then has been grepped twice
 # once to get the repositoryName and then to grep out the name itself without repositoryName
 
@@ -27,7 +38,7 @@
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
-# setting global variable to return from repoTag()
+# Global variables
 critCount="0"
 hiCount="0"
 medCount="0"
@@ -84,21 +95,29 @@ sortImgsInRepo(){
 		mkdir tmp/
 	fi
 	echo "Starting sort..."
-	while read repo
-	do
-		echo "Querying $repo"
-		aws ecr describe-images --repository $repo --query 'sort_by(imageDetails,& imagePushedAt)[*]' > tmp/$repo.txt
-	done < repos.txt
+	if [[ -f repos.txt ]]; then
+		while read repo
+		do
+			echo "Querying $repo"
+			aws ecr describe-images --repository $repo --query 'sort_by(imageDetails,& imagePushedAt)[*]' > tmp/$repo.txt
+		done < repos.txt
+		echo "Done querying."
+	else
+		echo "No repo names found, running option 1 -- getting repo names"
+		getRepoNames
+		sortImgsInRepo
+	fi
 	echo ""
-	echo "Done querying."
 }
 
 outputImgTagname(){
 	# saves froam bloating
-	rm images_with_tags.txt
+	if [[ -f images_with_tags.txt ]]; then
+		rm images_with_tags.txt
+	fi
 	while read repoName
 	do
-		echo "Writing $repoName:$repoTagName" 
+		echo "Writing $repoName:$repoTagName"
 		repoTag $repoName
 	done < repos.txt
 	echo ""
@@ -111,7 +130,7 @@ outputImgTagname(){
 repo=""
 isECRknown(){
 	if [ ! -f ecr.txt ]; then
-		getECR	
+		getECR
 	else
 		repo=$(cat ecr.txt)
 	fi
@@ -119,7 +138,7 @@ isECRknown(){
 
 addToAnch(){
 	# TODO:
-        # Count new (not analyzed) images and print result	
+        # Count new (not analyzed) images and print result
 	# ADD ERROR LOG
 	# Timeout feature---if takes too long to respond >5s, then timeout, throw error
 	isECRknown
@@ -141,7 +160,7 @@ anchVulnResults(){
 	echo "1 - all vulnerabilities"
 	echo "2 - os vulns"
 	echo "3 - non-os vulns"
-	echo "* - enter any other value to exit" 
+	echo "* - enter any other value to exit"
 	read vulnChoice
 	case $vulnChoice in
 		1) vulnSelection="all" ;;
@@ -287,13 +306,13 @@ placeholderPasta(){
 #	echo "$hi <- hi"
 #	echo "$crit <- crit"
 	if [[ "$med" -gt 0 && ! -z "$med" ]]; then
-		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest 
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest
 	fi
 	if [[ "$hi" -gt 0 && ! -z "$med" ]]; then
-		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "High Vulns:" $hi)" $dest 
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "High Vulns:" $hi)" $dest
 	fi
 	if [[ "$crit" -gt 0 && ! -z "$med" ]];then
-		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Critical Vulns:" $crit)" $dest 
+		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Critical Vulns:" $crit)" $dest
 	fi
 		# Note to self: for adding variables '$(( ))' is used
 		critCount=$((critCount+crit))
@@ -325,7 +344,7 @@ rw(){
 #	echo "$dest <- dest before sed URL-ing"
 	# TODO explain how this command works
 	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
-	mv tmp.html $dest 
+	mv tmp.html $dest
 	rm tmp.html
 	echo "Done highlighting & URL-ing"
 }
@@ -380,7 +399,7 @@ printPreferred(){
 			echo "Chosen Repo: $chosenRepo"
 		if [[ $getImgNum -lt ${#repoArr[@]} ]]; then # && ! -z $getImg ]]; then
 			echo "Chosen Repo: $chosenRepo"
-		# TODO 
+		# TODO
 		# check if $chosenRepo has (amazonaws) in it
 		# if not:
 		# separate $chosenRepo to repo and img
@@ -388,7 +407,7 @@ printPreferred(){
 		# (?<=\/)([a-zA-Z-9\?-]+:[a-zA-Z0-9\_-]+) captures img:tag
 		# feed the $repoName$imgName to anchVulnResults
 			anchVulnResults $chosenRepo
-		else 
+		else
 			echo "Input out of bounds."
 			echo "Bye!"
 			exit 0
