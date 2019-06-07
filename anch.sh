@@ -39,6 +39,8 @@
 # * clean up code
 # * printf instead vuln count echo
 # * Count new (not analyzed) images and print result in addToAnch()
+# * Clarify how `awk` and `sed` commands work for future reference in rw()
+# * rm dangling TODO's
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
@@ -265,15 +267,15 @@ echo "Z" >> $dest
 		do
 			echo ""
 			echo Querying $repo/$scan
-			# creating temp file to get the vuln count
 			touch tmp.html
+			# ^ creating temp file to get the vuln count
 			destTemp=($dest)
 			destTMP=$pwd/tmp.html
 			dest=($destTMP)
 			echo "<h2>$scan</h2>" >> $dest
 			anchore-cli image vuln $repo/$scan $vulnSelection >> $dest
-			# counting vulnerabilities and adding to placeholder
 			placeholderPasta
+			# ^ counting vulnerabilities and adding to placeholder
 		done < images_with_tags.txt
 	else
 	# if $1 exists, then
@@ -283,7 +285,7 @@ echo "Z" >> $dest
 		echo "<h2>$1</h2>" >> $dest
 #		anchore-cli image vuln $repo/$1 $vulnSelection >> $dest
 		anchore-cli image vuln $1 $vulnSelection >> $dest
-		placeholderPasta #singleImgRequested
+		placeholderPasta
 	fi
 	echo "</code></pre></html>" >> $dest
 	echo ""
