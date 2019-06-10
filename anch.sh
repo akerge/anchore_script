@@ -36,11 +36,11 @@
 # executing `aws ecr get-login`
 
 # TODO
-# * clean up code
+# * clean up code & rm dangling TODO's
 # * printf instead vuln count echo
 # * Count new (not analyzed) images and print result in addToAnch()
 # * Clarify how `awk` and `sed` commands work for future reference in rw()
-# * rm dangling TODO's
+# * explain `sed` and `awk` commands
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
