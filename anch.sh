@@ -179,12 +179,9 @@ anchVulnResults(){
 	pwd=$(pwd)
 	date=$(date +%F)
 	dest=$pwd/$reportDir/All_imgs-$vulnSelection-vulns-$date-anchore_report.html
-	# If a single repo vuln report is wanted
-	echo "$1 <- argument"
-	# Commenting out for testing. At the time of writing grep fails and no $short
+	# If a single image is wanted (no $1 argument), then the imageName:tag will be grepped:
 	if [ ! -z $1 ]; then
 		short=$(echo "$1" | grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
-		echo "$short <- short"
 		dest=$pwd/$reportDir/$short-$vulnSelection-vulns-$date-anchore_report.html
 	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
