@@ -17,3 +17,14 @@ I was tired to see the vulnerability report on the CLI and made this is a handy 
 * [anchore-cli](https://github.com/anchore/anchore-cli) - saves the trouble of `docker exec anchore-engine anchore cli` every time.
 
 * [anchore engine docker container](https://hub.docker.com/r/anchore/anchore-engine/)
+
+Don't forget to add PATH and environment variables (either to .profile or .bashrc, whichever you use):
+
+```bash
+PATH=$PATH:/usr/local/bin/anchore-cli
+ANCHORE_CLI_URL=http://localhost:8228/v1
+ANCHORE_CLI_USER=admin
+ANCHORE_CLI_PASS=foobar
+```
+
+At the time of writing, anchore-cli runs on python 2.7!
