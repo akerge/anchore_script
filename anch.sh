@@ -36,6 +36,9 @@
 # executing `aws ecr get-login`
 
 # TODO
+# * add note to register with `anchore-cli registry add REGISTRY USERNAME PASSWORD`
+#   ^ might be already implemented, TBD
+# * add note regarding enabling extra vulnerability feeds
 # * clean up code & rm dangling TODO's
 # * printf instead vuln count echo
 # * Count new (not analyzed) images and print result in addToAnch()
