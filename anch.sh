@@ -36,8 +36,6 @@
 # executing `aws ecr get-login`
 
 # TODO
-# * add note to register with `anchore-cli registry add REGISTRY USERNAME PASSWORD`
-#   ^ might be already implemented, TBD
 # * add note regarding enabling extra vulnerability feeds
 # * clean up code & rm dangling TODO's
 # * printf instead vuln count echo
@@ -304,9 +302,6 @@ placeholderPasta(){
 	crit=`awk '/Critical/ {count++} END{print count}' $dest`
 	hi=`awk '/High/ {count++} END{print count}' $dest`
 	med=`awk '/Medium/ {count++} END{print count}' $dest`
-#	echo "$med <- med"
-#	echo "$hi <- hi"
-#	echo "$crit <- crit"
 	if [[ "$med" -gt 0 && ! -z "$med" ]]; then
 		sed -ie "/<\/h2>/a $(printf "%-16s%8u" "Medium Vulns:" $med)" $dest
 	fi
@@ -320,14 +315,12 @@ placeholderPasta(){
 		critCount=$((critCount+crit))
 		hiCount=$((hiCount+hi))
 		medCount=$((medCount+med))
-		# TODO
-		# printf output below
-		echo "$critCount <- total crit count"
-		echo "$hiCount <- total hi count after"
-		echo "$medCount <- total med count after"
-#	echo "$dest <- pre-destTemp"
+	# TODO
+	# printf output below
+	echo "$critCount <- total crit count"
+	echo "$hiCount <- total hi count after"
+  echo "$medCount <- total med count after"
 	dest=$destTemp
-#	echo "$dest <- post-destTemp"
 	cat tmp.html >> $dest
 	rm tmp.html
 }
@@ -335,6 +328,7 @@ placeholderPasta(){
 rw(){
 	echo Highlighting...
 	echo "$dest <- dest"
+	#	"$dest <- destination before sed URL-ing"
 	# TODO explain how the awk arguments work
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
 	awk '/Critical/ {$0=$0"</span>"} 1' tmp.html > $dest
@@ -343,8 +337,7 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-#	echo "$dest <- dest before sed URL-ing"
-	# TODO explain how this command works
+	# TODO explain how following command works
 	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest
 	rm tmp.html
@@ -394,12 +387,11 @@ printPreferred(){
 		echo ""
 		echo "Enter the number of image you want to retrieve the vuln list for"
 		read getImgNum
-#		anchore-cli image vuln ${repoArr[$i]} all
 		repoArrLen=${#repoArr[@]}
-#		echo "Length of repoArr: $repoArrLen"
 		chosenRepo=${repoArr[$getImgNum]}
-			echo "Chosen Repo: $chosenRepo"
-		if [[ $getImgNum -lt ${#repoArr[@]} ]]; then # && ! -z $getImg ]]; then
+		# -lt and -gt work better than '>' and '<'
+		# also not much input validation here
+		if [ $getImgNum -lt ${#repoArr[@]} ] && [ $getImgNum -gt 0 ]; then # && ! -z $getImg ]]; then
 			echo "Chosen Repo: $chosenRepo"
 		# TODO
 		# check if $chosenRepo has (amazonaws) in it
