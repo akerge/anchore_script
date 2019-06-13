@@ -62,8 +62,13 @@ imgName=""
 repo=""
 getRepoNames(){
 	echo Getting repos...
-	aws ecr describe-repositories > desc_repos.txt
-	grep -oP '(?<=repositoryName": ")([^\.{1}][a-zA-Z0-9-]*)' desc_repos.txt > repos.txt
+	if aws ecr describe-repositories > desc_repos.txt ; then
+		grep -oP '(?<=repositoryName": ")([^\.{1}][a-zA-Z0-9-]*)' desc_repos.txt > repos.txt
+	else
+		echo "Executing `aws` failed. Either not installed or configured."
+		echo "Try adding the ECR registry to anchore by running:"
+		echo "anchore-cli registry add REGISTRY USERNAME PASSWORD"
+	fi
 	rm desc_repos.txt
 	echo Done!
 }
@@ -74,7 +79,6 @@ repoTag(){
 	arr=($(grep -oP --color '(?<=            ")([a-zA-Z0-9.\/\-_]+)' tmp/$1.txt))
 	# ^ greps all the tags
 	arrEnd=$(($lat-1))
-#	echo array has $arrEnd indexes
 	# sanity check if no images in repo (empty array)
 	last=${arr[0]}
 	if [ -z $last ];
@@ -84,12 +88,10 @@ repoTag(){
 		return 1
 	else
 		lastEl=${arr[$arrEnd]}
+		# "$lastEl <- last element of array"
 		repoTagName=$lastEl
-#		echo "$lastEl <- last element of array"
 		echo $repoName:$repoTagName >> images_with_tags.txt
 		let writImgs++
-		#echo reoName:repoTagName
-		#echo $repoName:$repoTagName added
 	fi
 	repoTagName=""
 	sort images_with_tags.txt > tmp.txt
@@ -147,7 +149,7 @@ isECRknown(){
 
 addToAnch(){
 	isECRknown
-#	^ This requires that user has logged in to AWS via CLI
+  #	^ This requires that user has logged in to AWS via CLI
 	while read latestAndGreatest
 	do
 		echo "Feeding $repo/$latestAndGreatest to anchore to scan"
