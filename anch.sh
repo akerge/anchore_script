@@ -36,12 +36,14 @@
 # executing `aws ecr get-login`
 
 # TODO
-# * add note regarding enabling extra vulnerability feeds
-# * clean up code & rm dangling TODO's
-# * printf instead vuln count echo
-# * Count new (not analyzed) images and print result in addToAnch()
+# * Move vulnerability output either to one function for better portability or
+#   for better containment (functions not being all over the script).
+# * Add note regarding enabling extra vulnerability feeds.
+# * Clean up code & rm dangling TODO's.
+# * Change vulnerability count `echo` to `printf` instead.
+# * Count new (not analyzed) images and print result in addToAnch().
 # * Clarify how `awk` and `sed` commands work for future reference in rw()
-# * explain `sed` and `awk` commands
+# * Document `sed` and `awk` command details in functions.
 
 tabs 4	# set tab len to 4 for prettier element alignment
 
