@@ -450,12 +450,12 @@ line="= = = = = = = = = = = = = = = = ="
 clear
 echo "Simple script to get all ECR repos with latest tags"
 echo "$line $line"
-echo "1  - Output all ECR images in repo to repos.txt"
-echo "2  - Output all tags in all ECR images to tmp/<image>.txt"
-echo "3  - Output images with tags to images_with_tags.txt "
-echo "4  - Add images to anchore to scan"
+echo "1  - Automated steps 2-5 <- choose this if executing for the first time"
 echo "	   (needs anchore-cli installed and container running)"
-echo "5  - > Do all of the above! < - run this if executing for the first time"
+echo "2  - Output all ECR images in repo to repos.txt"
+echo "3  - Output all tags in all ECR images to tmp/<image>.txt"
+echo "4  - Output images with tags to images_with_tags.txt "
+echo "5  - Add images to anchore to scan"
 echo "6  - Print ALL vuln scan result(s) for ECR to HTML and show"
 echo "7  - Print vuln scan result(s) for specific image:tag to HTML and show"
 echo "8  - Show known ECR images:tags"
@@ -467,27 +467,6 @@ read INPUT
 
 case $INPUT in
 	1)	clear
-		echo $line
-		# noteworthy https://gist.github.com/rpherrera/d7a4d905775653b88e5f
-		# jq is a prerequisite
-		getRepoNames
-		;;
-	2)	clear
-		echo Sorting images repo by repo, please stand by...
-		echo $line
-		sortImgsInRepo
-		;;
-	3)	clear
-		echo Writing image:tag to a file...
-		echo $line
-		outputImgTagname
-		;;
-	4)	clear
-		echo Submitting images to anchore...
-		echo $line
-		addToAnch
-		;;
-	5)	clear
 		echo Here we go!
 		echo $line
 		getVuln
@@ -496,6 +475,27 @@ case $INPUT in
 		echo You can check the status of engine by entering
 		echo anchore-cli image list
 		echo $line
+		;;
+	2)	clear
+		echo $line
+		# noteworthy https://gist.github.com/rpherrera/d7a4d905775653b88e5f
+		# jq is a prerequisite
+		getRepoNames
+		;;
+	3)	clear
+		echo Sorting images repo by repo, please stand by...
+		echo $line
+		sortImgsInRepo
+		;;
+	4)	clear
+		echo Writing image:tag to a file...
+		echo $line
+		outputImgTagname
+		;;
+	5)	clear
+		echo Submitting images to anchore...
+		echo $line
+		addToAnch
 		;;
 	6)	clear
 		echo Querying vuln results from anchore
