@@ -371,7 +371,12 @@ getECR(){
 }
 
 printImagesWithTags(){
-	cat images_with_tags.txt
+	if [ -f images_with_tags.txt ]; then
+		cat images_with_tags.txt
+	else
+		echo "images_with_tags.txt not found!"
+		echo "Please run option 4 - print images images with tags to images_with_tags.txt"
+	fi
 }
 
 printPreferred(){
