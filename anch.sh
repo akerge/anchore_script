@@ -361,8 +361,8 @@ getResults(){
 
 getECR(){
 	if [ ! -f ecr.txt ]; then
+		echo "Figuring out ECR..."
 		aws ecr get-login | grep -oP '(?<=https:\/\/)([a-zA-Z0-9.-]*)' > ecr.txt
-		echo "<Drum roll>"
 		cat ecr.txt
 		echo Saved to ecr.txt
 	else
