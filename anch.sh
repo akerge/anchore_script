@@ -455,17 +455,17 @@ line="= = = = = = = = = = = = = = = = ="
 clear
 echo "Simple script to get all ECR repos with latest tags"
 echo "$line $line"
-echo "1  - Automated steps 2-5 (all need anchore-cli installed and container running)"
-echo "2  - Output all ECR images in repo to repos.txt"
-echo "3  - Output all tags in all ECR images to tmp/<image>.txt"
-echo "4  - Output images with tags to images_with_tags.txt "
-echo "5  - Add images to anchore to scan"
-echo "6  - Print ALL vuln scan result(s) for ECR to HTML and show"
-echo "7  - Print vuln scan result(s) for specific image:tag to HTML and show"
-echo "8  - Show known ECR images:tags"
-echo "9  - Show known ECR repo"
-echo "99 - Show ALL known images:tags in anchore"
-echo "Q  - Quit"
+echo "1 - Automated steps 2-5 (all need anchore-cli installed and container running)"
+echo "2 - Output all ECR images in repo to repos.txt"
+echo "3 - Output all tags in all ECR images to tmp/<image>.txt"
+echo "4 - Output images with tags to images_with_tags.txt "
+echo "5 - Add images to anchore to scan"
+echo "6 - Print ALL vuln scan result(s) for ECR to HTML and show"
+echo "7 - Print vuln scan result(s) for specific image:tag to HTML and show"
+echo "8 - Show known ECR images:tags"
+echo "9 - Show known ECR repo"
+echo "0 - Show ALL known images:tags in anchore"
+echo "Q - Quit"
 
 read INPUT
 
@@ -527,13 +527,9 @@ case $INPUT in
 		getAllimgsRepos
 		cat allRepos.txt
 		;;
-	q|Q|0)	echo ""
+	q|Q|*)	echo ""
 		clear
 		echo Bye!
 		exit
-		;;
-	*)	echo ""
-		clear
-		echo Not an option. Please re-run.
 		;;
 esac
