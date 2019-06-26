@@ -77,23 +77,20 @@ repoTag(){
 	# grep the imageTags from the $repo.txt to an array
 	# save the latest (last) array element to a file
 	arr=($(grep -oP --color '(?<=            ")([a-zA-Z0-9.\/\-_]+)' tmp/$1.txt))
-	# ^ greps all the tags
-	arrEnd=$(($lat-1))
-	# sanity check if no images in repo (empty array)
-	last=${arr[0]}
-	if [ -z $last ];
+	# ^ greps all the tags of an image
+	first=${arr[0]} # first element of array
+	# Sanity below check if no images in repo (empty array)
+	if [ -z $first ];
 	then
-		echo ! $repoName - nil images, skipping...
+		echo "! $repoName - nil images, skipping..."
 		let skipImgs++
 		return 1
 	else
-		lastEl=${arr[$arrEnd]}
-		# "$lastEl <- last element of array"
-		repoTagName=$lastEl
+		repoTagName=${arr[$arrEnd]} # reassigning last element or array for clarity
 		echo $repoName:$repoTagName >> images_with_tags.txt
 		let writImgs++
 	fi
-	repoTagName=""
+#	repoTagName=""
 	sort images_with_tags.txt > tmp.txt
 	cat tmp.txt > images_with_tags.txt
 	rm tmp.txt
@@ -128,9 +125,9 @@ outputImgTagname(){
 	fi
 	while read repoName
 	do
-		echo "Writing $repoName:$repoTagName"
 		# repoTag does the all the heavy lifting of grep'ing latest tag.
 		repoTag $repoName
+		echo "Writing $repoName:$repoTagName"
 	done < repos.txt
 	echo ""
 	echo "Done writing."
