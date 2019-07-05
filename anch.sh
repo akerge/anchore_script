@@ -336,7 +336,9 @@ rw(){
 	awk -v pat=Medium 'index($0, pat) {$0="<span class=med>" $0} 1' $dest > tmp.html
 	awk '/Medium/ {$0=$0"</span>"} 1' tmp.html > $dest
 	echo Making URL-s clickable...
-	# TODO explain how following command works
+	# How following `sed` command works:
+	# sed -r -- stream editor with extended regex
+	# substitute|(regexp address)(that captures the CVE or RHSA)|<link goes here>|globally to all matches, not only the first
 	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest
 	rm tmp.html
