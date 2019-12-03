@@ -321,7 +321,9 @@ placeholderPasta(){
   echo "$medCount <- total med count after"
 	dest=$destTemp
 	cat tmp.html >> $dest
-	rm tmp.html
+	if [[ -f tmp.html ]]; then
+		rm tmp.html
+	fi
 }
 
 rw(){
