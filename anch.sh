@@ -343,7 +343,9 @@ rw(){
 	# substitute|(regexp address)(that captures the CVE or RHSA)|<link goes here>|globally to all matches, not only the first
 	sed -r 's|(https?:\/\/[a-zA-Z.\~0-9\=\?\/-]*[\/|=])([A-Z]{3,4}[0-9A-Za-z\:-]+)|<a target="_blank" href="\1\2">Vuln Feed Link</a> <a target="_blank" href="https://google.com/search?q=\2">Search for \2</a>|g' $dest > tmp.html
 	mv tmp.html $dest
-	rm tmp.html
+	if [[ -f tmp.html ]];then
+		rm tmp.html
+	fi
 	echo "Done highlighting & URL-ing"
 }
 
