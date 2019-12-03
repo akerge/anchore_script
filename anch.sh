@@ -151,7 +151,7 @@ addToAnch(){
 	do
 		echo "Feeding $repo/$latestAndGreatest to anchore to scan"
 		echo "$line $line"
-		anchore-cli image add $repo/$latestAndGreatest #--force
+		anchore-cli --url http://localhost:8228/v1 --u admin --p foobar image add $repo/$latestAndGreatest #--force
 	done < images_with_tags.txt
 	echo Done feeding.
 
@@ -272,7 +272,7 @@ echo "Z" >> $dest
 			destTMP=$pwd/tmp.html
 			dest=($destTMP)
 			echo "<h2>$scan</h2>" >> $dest
-			anchore-cli image vuln $repo/$scan $vulnSelection >> $dest
+			anchore-cli --url http://localhost:8228/v1 --u admin --p foobar image vuln $repo/$scan $vulnSelection >> $dest
 			placeholderPasta
 			# ^ counting vulnerabilities and adding to placeholder
 		done < images_with_tags.txt
@@ -283,7 +283,7 @@ echo "Z" >> $dest
 		dest=($pwd/tmp.html)
 		echo "<h2>$1</h2>" >> $dest
 #		anchore-cli image vuln $repo/$1 $vulnSelection >> $dest
-		anchore-cli image vuln $1 $vulnSelection >> $dest
+		anchore-cli --url http://localhost:8228/v1 --u admin --p foobar image vuln $1 $vulnSelection >> $dest
 		placeholderPasta
 	fi
 	echo "</code></pre></html>" >> $dest
@@ -444,7 +444,7 @@ printSpecificImgVuln(){
 }
 
 getAllimgsRepos(){
-	anchore-cli image list | grep -oP '([^ sha256\s][a-zA-Z\d\/\.-]+:[a-z\d\_\.-]+)' > allRepos.txt
+	anchore-cli --url http://localhost:8228/v1 --u admin --p foobar image list | grep -oP '([^ sha256\s][a-zA-Z\d\/\.-]+:[a-z\d\_\.-]+)' > allRepos.txt
 #	cat allRepos.txt
 }
 
@@ -455,10 +455,10 @@ clear
 echo "Simple script to get all ECR repos with latest tags"
 echo "$line $line"
 echo "1 - Automated steps 2-5 (all need anchore-cli installed and container running)"
-echo "2 - Output all ECR images in repo to repos.txt"
-echo "3 - Output all tags in all ECR images to tmp/<image>.txt"
-echo "4 - Output images with tags to images_with_tags.txt "
-echo "5 - Add images to anchore to scan"
+echo "  2 - Output all ECR images in repo to repos.txt"
+echo "  3 - Output all tags in all ECR images to tmp/<image>.txt"
+echo "  4 - Output images with tags to images_with_tags.txt "
+echo "  5 - Add images to anchore to scan"
 echo "6 - Print ALL vuln scan result(s) for ECR to HTML and show"
 echo "7 - Print vuln scan result(s) for specific image:tag to HTML and show"
 echo "8 - Show known ECR images:tags"
@@ -520,7 +520,7 @@ case $INPUT in
 		echo $line
 		getECR
 		;;
-	99)	clear
+	0)	clear
 		echo "Retrieving all known repos and images from anchore..."
 		echo "$line $line"
 		getAllimgsRepos
