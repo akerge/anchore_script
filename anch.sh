@@ -183,7 +183,7 @@ anchVulnResults(){
 	dest=$pwd/$reportDir/All_imgs-$vulnSelection-vulns-$date-anchore_report.html
 	# If a single image is wanted (no $1 argument), then the imageName:tag will be grepped:
 	if [ ! -z $1 ]; then
-		short=$(echo "$1" | grep -oP '(?<=\/)([a-zA-Z0-9\_-]+:[a-zA-Z0-9\_-]+)')
+		short=$(echo "$1" | grep -oP '^[a-zA-Z0-9\_-]+[^:]')
 		dest=$pwd/$reportDir/$short-$vulnSelection-vulns-$date-anchore_report.html
 	fi
 	echo "<!DOCTYPE html><html><head>" > $dest
@@ -318,7 +318,7 @@ placeholderPasta(){
 	# printf output below
 	echo "$critCount <- total crit count"
 	echo "$hiCount <- total hi count after"
-  echo "$medCount <- total med count after"
+	echo "$medCount <- total med count after"
 	dest=$destTemp
 	cat tmp.html >> $dest
 	if [[ -f tmp.html ]]; then
@@ -328,7 +328,6 @@ placeholderPasta(){
 
 rw(){
 	echo Highlighting...
-	echo "$dest <- dest"
 	#	"$dest <- destination before sed URL-ing"
 	# TODO explain how the awk arguments work
 	awk -v pat=Critical 'index($0, pat) {$0="<span class=crit>" $0} 1' $dest > tmp.html
